@@ -9,6 +9,7 @@ import { CurrencySelector } from '../../src/components/CurrencySelector';
 import { Input } from '../../src/components/input';
 import { Notice } from '../../src/components/Notice';
 import { SwitchRow } from '../../src/components/SwitchRow';
+import { loadSampleData } from '../../src/database/sampleData';
 import { getSettings, resetAllData, setSetting } from '../../src/database/settings';
 import { styles } from '../../src/styles/configuracoes.styles';
 import { parseAmount } from '../../src/utils/convertCurrency';
@@ -52,6 +53,11 @@ export default function SettingsScreen() {
   async function handleTestNotification() {
     const sent = await sendLocalNotification('Câmbio Real', 'As notificações estão funcionando!');
     if (sent) Alert.alert('Notificação enviada', 'Confira a barra de notificações.');
+  }
+
+  async function handleSampleData() {
+    await loadSampleData(db);
+    Alert.alert('Dados de exemplo carregados', '5 conversões e 2 orçamentos foram criados. Veja nas abas Histórico e Orçamentos.');
   }
 
   function handleReset() {
@@ -123,6 +129,9 @@ export default function SettingsScreen() {
       <Text style={styles.sectionTitle}>Ações</Text>
       <View style={styles.card}>
         <ActionButton title="Testar notificação" icon="notifications" variant="outline" onPress={handleTestNotification} />
+        {__DEV__ ? (
+          <ActionButton title="Carregar dados de exemplo" icon="flask" variant="secondary" onPress={handleSampleData} />
+        ) : null}
         <ActionButton title="Apagar todos os dados" icon="trash" variant="danger" onPress={handleReset} />
       </View>
 
