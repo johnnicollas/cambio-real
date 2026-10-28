@@ -16,10 +16,12 @@ import { Button } from '../../src/components/Button';
 import { styles } from '../../src/styles/converter.styles';
 import { Input } from '../../src/components/input';
 import { ResultCard } from '../../src/components/ResultCard';
-import { exchangeRateApi } from '../../src/services/api';
-import { convertCurrency } from '../../src/utils/convertCurrency';
+import { useSQLiteContext } from 'expo-sqlite';
+import { getRate } from '../../src/services/api';
+import { convertCurrency, parseAmount } from '../../src/utils/convertCurrency';
 
 export default function ConverterScreen() {
+  const db = useSQLiteContext();
   const [amount, setAmount] = useState('');
   const [fromCurrency, setFromCurrency] = useState('USD');
   const [toCurrency, setToCurrency] = useState('BRL');
@@ -30,16 +32,16 @@ export default function ConverterScreen() {
   const currencyList = Array.isArray(currencies) ? currencies : [];
 
   async function fetchExchangeRate() {
-    if (!amount) return;
+    const value = parseAmount(amount);
+    if (!(value > 0)) return;
 
     try {
       setLoading(true);
-      const data = await exchangeRateApi(fromCurrency);
-      const rate = data.rates[toCurrency];
-      
+      const { rate } = await getRate(db, fromCurrency, toCurrency);
+
       setExchangeRate(rate);
 
-      const convertedAmount = convertCurrency(amount, rate);
+      const convertedAmount = convertCurrency(value, rate);
       setResult(convertedAmount);
     } catch (error) {
       console.error("Erro ao buscar taxa de câmbio:", error);
@@ -139,9 +141,9 @@ export default function ConverterScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.convertButton, (!amount || loading) && styles.convertButtonDisabled]}
+            style={[styles.convertButton, (!(parseAmount(amount) > 0) || loading) && styles.convertButtonDisabled]}
             onPress={fetchExchangeRate}
-            disabled={!amount || loading}
+            disabled={!(parseAmount(amount) > 0) || loading}
           >
             {loading ? (
               <ActivityIndicator color="white" />

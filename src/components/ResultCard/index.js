@@ -1,5 +1,6 @@
 import { Text, View } from "react-native";
-import { styles } from "./styles"; 
+import { styles } from "./styles";
+import { formatMoney, formatRate } from "../../utils/formatMoney";
 
 export function ResultCard({ 
     exchangeRate,
@@ -17,10 +18,10 @@ export function ResultCard({
         <View style={styles.container}>
             <Text style={styles.label}>Resultado:</Text>
             <Text style={styles.amount}>
-                {toSymbol} {result}
+                {formatMoney(result, toCurrency)}
             </Text>
             <Text style={styles.rate}>
-                taxa de cambio 1 {fromCurrency} = {exchangeRate.toFixed(4)} {toCurrency}
+                taxa de cambio 1 {fromCurrency} = {formatRate(exchangeRate)} {toCurrency}
             </Text>
         </View>
     );

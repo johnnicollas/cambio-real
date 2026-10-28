@@ -18,7 +18,21 @@ export const styles =  StyleSheet.create({
         fontWeight: 'bold',
         padding: 16,
         borderRadius: 8,
-
-    }
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    inputCompact: {
+        fontSize: 16,
+        fontWeight: '400',
+        padding: 12,
+    },
+    inputError: {
+        borderColor: colors.danger,
+    },
+    error: {
+        color: colors.danger,
+        fontSize: 13,
+        marginTop: 6,
+    },
 
 })
