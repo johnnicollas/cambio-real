@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "conversor.app",
+    "name": "Câmbio Real",
     "slug": "conversor-app",
     "version": "1.0.0",
+    "scheme": "cambioreal",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true
     },
@@ -22,7 +23,9 @@
     },
     "plugins": [
       "expo-asset",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-router",
+      "expo-sqlite"
     ]
   }
 }

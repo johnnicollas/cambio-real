@@ -11,15 +11,15 @@ import {
 import { useState } from 'react';
 
 
-import { currencies } from './src/constants/currencies'; 
-import { Button } from './src/components/Button';
-import { styles } from './app.styles';
-import { Input } from './src/components/input';
-import { ResultCard } from './src/components/ResultCard';
-import { exchangeRateApi } from './src/services/api';
-import { convertCurrency } from './src/utils/convertCurrency';
+import { currencies } from '../../src/constants/currencies'; 
+import { Button } from '../../src/components/Button';
+import { styles } from '../../src/styles/converter.styles';
+import { Input } from '../../src/components/input';
+import { ResultCard } from '../../src/components/ResultCard';
+import { exchangeRateApi } from '../../src/services/api';
+import { convertCurrency } from '../../src/utils/convertCurrency';
 
-export default function App() {
+export default function ConverterScreen() {
   const [amount, setAmount] = useState('');
   const [fromCurrency, setFromCurrency] = useState('USD');
   const [toCurrency, setToCurrency] = useState('BRL');
