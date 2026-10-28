@@ -28,6 +28,12 @@ export function formatDecimal(value) {
   return formatNumber(value, 2).replace(/,?0+$/, '');
 }
 
+// Valor para preencher um campo de edição, sem separador de milhar.
+// Ex.: toInputText(3000) -> "3000"; toInputText(12.5) -> "12,5"
+export function toInputText(value) {
+  return String(value).replace('.', ',');
+}
+
 // Ex.: formatPercent(3.5) -> "3,5%"
 export function formatPercent(value) {
   return `${formatDecimal(value)}%`;

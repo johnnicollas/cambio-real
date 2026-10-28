@@ -12,7 +12,7 @@ import { SwitchRow } from '../../src/components/SwitchRow';
 import { getSettings, resetAllData, setSetting } from '../../src/database/settings';
 import { styles } from '../../src/styles/configuracoes.styles';
 import { parseAmount } from '../../src/utils/convertCurrency';
-import { formatDecimal } from '../../src/utils/formatMoney';
+import { toInputText } from '../../src/utils/formatMoney';
 import { sendLocalNotification } from '../../src/utils/notifications';
 
 export default function SettingsScreen() {
@@ -24,7 +24,7 @@ export default function SettingsScreen() {
   const loadSettings = useCallback(async () => {
     const loaded = await getSettings(db);
     setSettings(loaded);
-    setIofText(formatDecimal(loaded.iofPercent));
+    setIofText(toInputText(loaded.iofPercent));
     setIofSaved(false);
   }, [db]);
 

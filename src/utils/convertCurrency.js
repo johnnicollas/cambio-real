@@ -1,5 +1,5 @@
-// Converte o texto digitado em número. Aceita "10,50", "10.50", "1.234,56"
-// e "1,234.56". Devolve NaN quando o valor é vazio ou inválido.
+// Converte o texto digitado em número. Aceita "10,50", "10.50", "1.234,56",
+// "3.000" (três mil) e "1,234.56". Devolve NaN quando o valor é vazio ou inválido.
 export function parseAmount(text) {
   if (text === null || text === undefined) return NaN;
   let value = String(text).trim().replace(/\s/g, '');
@@ -12,8 +12,8 @@ export function parseAmount(text) {
     // Os dois aparecem: o último é o separador decimal, o outro é de milhar.
     const thousands = lastComma > lastDot ? '.' : ',';
     value = value.split(thousands).join('');
-  } else if ((value.match(/\./g) || []).length > 1) {
-    // "1.234.567": vários pontos só podem ser separadores de milhar.
+  } else if ((value.match(/\./g) || []).length > 1 || /^\d{1,3}\.\d{3}$/.test(value)) {
+    // "1.234.567" ou "3.000": pontos como separador de milhar (padrão brasileiro).
     value = value.split('.').join('');
   }
   value = value.replace(',', '.');
