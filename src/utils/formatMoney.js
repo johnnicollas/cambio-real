@@ -22,3 +22,13 @@ export function formatMoney(value, code) {
 export function formatRate(rate) {
   return formatNumber(rate, 4);
 }
+
+// Número sem zeros sobrando. Ex.: formatDecimal(3.5) -> "3,5"; formatDecimal(6) -> "6"
+export function formatDecimal(value) {
+  return formatNumber(value, 2).replace(/,?0+$/, '');
+}
+
+// Ex.: formatPercent(3.5) -> "3,5%"
+export function formatPercent(value) {
+  return `${formatDecimal(value)}%`;
+}

@@ -1,4 +1,3 @@
-import { StatusBar } from 'expo-status-bar';
 import {
   KeyboardAvoidingView,
   ScrollView,
@@ -6,55 +5,115 @@ import {
   View,
   Platform,
   TouchableOpacity,
-  ActivityIndicator, 
 } from 'react-native';
-import { useState } from 'react';
-
-
-import { currencies } from '../../src/constants/currencies'; 
-import { Button } from '../../src/components/Button';
-import { styles } from '../../src/styles/converter.styles';
-import { Input } from '../../src/components/input';
-import { ResultCard } from '../../src/components/ResultCard';
+import { useCallback, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { getRate } from '../../src/services/api';
-import { convertCurrency, parseAmount } from '../../src/utils/convertCurrency';
+import { Ionicons } from '@expo/vector-icons';
+
+import { ActionButton } from '../../src/components/ActionButton';
+import { CurrencySelector } from '../../src/components/CurrencySelector';
+import { Input } from '../../src/components/input';
+import { Notice } from '../../src/components/Notice';
+import { ResultCard } from '../../src/components/ResultCard';
+import { SwitchRow } from '../../src/components/SwitchRow';
+import { createConversion } from '../../src/database/conversions';
+import { getSettings } from '../../src/database/settings';
+import { getRate, offlineMessage } from '../../src/services/api';
+import { styles } from '../../src/styles/converter.styles';
+import { convertWithBreakdown, parseAmount } from '../../src/utils/convertCurrency';
+import { formatPercent } from '../../src/utils/formatMoney';
 
 export default function ConverterScreen() {
   const db = useSQLiteContext();
   const [amount, setAmount] = useState('');
   const [fromCurrency, setFromCurrency] = useState('USD');
   const [toCurrency, setToCurrency] = useState('BRL');
-  const [result, setResult] = useState('');
+  const [iofPercent, setIofPercent] = useState(3.5);
+  const [includeIof, setIncludeIof] = useState(true);
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [exchangeRate, setExchangeRate] = useState(null);
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
 
-  const currencyList = Array.isArray(currencies) ? currencies : [];
+  // Guarda as últimas configurações lidas, para só trocar as moedas da
+  // tela quando o usuário mudar o padrão em Configurações.
+  const lastSettings = useRef(null);
 
-  async function fetchExchangeRate() {
-    const value = parseAmount(amount);
-    if (!(value > 0)) return;
+  useFocusEffect(
+    useCallback(() => {
+      getSettings(db).then(settings => {
+        const previous = lastSettings.current;
+        if (!previous || previous.defaultFrom !== settings.defaultFrom || previous.defaultTo !== settings.defaultTo) {
+          setFromCurrency(settings.defaultFrom);
+          setToCurrency(settings.defaultTo);
+          clearResult();
+        }
+        if (!previous || previous.includeIof !== settings.includeIof) {
+          setIncludeIof(settings.includeIof);
+        }
+        if (!previous || previous.iofPercent !== settings.iofPercent) {
+          setIofPercent(settings.iofPercent);
+          clearResult();
+        }
+        lastSettings.current = settings;
+      });
+    }, [db])
+  );
+
+  const value = parseAmount(amount);
+  const isValid = value > 0;
+  const amountError = amount.trim() !== '' && !isValid ? 'Digite um valor maior que zero (ex.: 10,50)' : '';
+
+  function clearResult() {
+    setResult(null);
+    setError('');
+    setSaved(false);
+  }
+
+  async function handleConvert() {
+    if (!isValid) return;
 
     try {
       setLoading(true);
-      const { rate } = await getRate(db, fromCurrency, toCurrency);
+      setError('');
+      const { rate, fetchedAt, offline } = await getRate(db, fromCurrency, toCurrency);
+      const appliedIof = includeIof ? iofPercent : 0;
 
-      setExchangeRate(rate);
-
-      const convertedAmount = convertCurrency(value, rate);
-      setResult(convertedAmount);
-    } catch (error) {
-      console.error("Erro ao buscar taxa de câmbio:", error);
+      setResult({
+        amount: value,
+        fromCurrency,
+        toCurrency,
+        rate,
+        iofPercent: appliedIof,
+        ...convertWithBreakdown(value, rate, appliedIof),
+        notice: offline ? offlineMessage(fetchedAt) : '',
+      });
+      setSaved(false);
+    } catch (err) {
+      setResult(null);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   }
 
+  async function handleSave() {
+    await createConversion(db, {
+      fromCurrency: result.fromCurrency,
+      toCurrency: result.toCurrency,
+      amount: result.amount,
+      rate: result.rate,
+      iofPercent: result.iofPercent,
+      result: result.total,
+    });
+    setSaved(true);
+  }
+
   function handleSwap() {
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
-    setResult('');
-    setExchangeRate(null);
+    clearResult();
   }
 
   return (
@@ -62,105 +121,83 @@ export default function ConverterScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar style="light" />
-
       <ScrollView
         contentContainerStyle={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
 
           <View style={styles.header}>
-            <Text style={styles.title}>
-              Conversor de Moedas
-            </Text>
-
             <Text style={styles.subTitle}>
-              Converta valores entre diferentes moedas
+              Descubra quanto uma compra custa de verdade em reais
             </Text>
           </View>
 
           <View style={styles.card}>
-
-            <Text style={styles.label}>
-              De:
-            </Text>
-
-            <View style={styles.currencyGrid}>
-              {currencyList.map(currency => (
-                <Button
-                  variant="primary"
-                  key={currency.code}
-                  currency={currency}
-                  onPress={() => {
-                    setFromCurrency(currency.code);
-                    setResult('');
-                    setExchangeRate(null);
-                  }}
-                  isSelected={fromCurrency === currency.code}
-                />
-              ))}
-            </View>
+            <CurrencySelector
+              label="De:"
+              value={fromCurrency}
+              onChange={code => {
+                setFromCurrency(code);
+                clearResult();
+              }}
+            />
 
             <Input
-              label="Valor :"
+              label="Valor:"
               value={amount}
+              error={amountError}
               onChangeText={(text) => {
                 setAmount(text);
-                setResult('');
-                setExchangeRate(null);
+                clearResult();
               }}
             />
 
             <TouchableOpacity style={styles.swapButton} onPress={handleSwap}>
-              <Text style={styles.swapButtonText}>
-                ↑↓
-              </Text>
+              <Ionicons name="swap-vertical" size={22} color="white" />
+              <Text style={styles.swapButtonText}>Inverter moedas</Text>
             </TouchableOpacity>
 
-            <Text style={styles.label}>
-              Para:
-            </Text>
+            <CurrencySelector
+              label="Para:"
+              variant="secondary"
+              value={toCurrency}
+              onChange={code => {
+                setToCurrency(code);
+                clearResult();
+              }}
+            />
 
-            <View style={styles.currencyGrid}>
-              {currencyList.map(currency => (
-                <Button
-                  variant="secondary"
-                  key={currency.code}
-                  currency={currency}
-                  onPress={() => {
-                    setToCurrency(currency.code);
-                    setResult('');
-                    setExchangeRate(null);
-                  }}
-                  isSelected={toCurrency === currency.code}
-                />
-              ))}
-            </View>
-
+            <SwitchRow
+              label={`Incluir IOF (${formatPercent(iofPercent)})`}
+              value={includeIof}
+              onValueChange={(on) => {
+                setIncludeIof(on);
+                clearResult();
+              }}
+            />
           </View>
 
-          <TouchableOpacity
-            style={[styles.convertButton, (!(parseAmount(amount) > 0) || loading) && styles.convertButtonDisabled]}
-            onPress={fetchExchangeRate}
-            disabled={!(parseAmount(amount) > 0) || loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.swapButtonText}>
-                Converter
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          <ResultCard 
-            exchangeRate={exchangeRate}
-            result={result}
-            fromCurrency={fromCurrency}
-            toCurrency={toCurrency}
-            currencies={currencyList}
+          <ActionButton
+            title="Converter"
+            onPress={handleConvert}
+            disabled={!isValid}
+            loading={loading}
           />
+
+          <Notice type="error" message={error} />
+          <Notice type="offline" message={result?.notice} />
+
+          <ResultCard result={result} />
+
+          {result ? (
+            saved ? (
+              <Notice type="info" message="Salvo no histórico" />
+            ) : (
+              <ActionButton title="Salvar no histórico" icon="bookmark" variant="secondary" onPress={handleSave} />
+            )
+          ) : null}
 
         </View>
       </ScrollView>

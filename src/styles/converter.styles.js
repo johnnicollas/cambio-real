@@ -19,14 +19,7 @@ export const styles = StyleSheet.create({
   },
 
   header: {
-    marginBottom: 32,
-  },
-
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 8,
+    marginBottom: 16,
   },
 
   subTitle: {
@@ -41,24 +34,12 @@ export const styles = StyleSheet.create({
     marginBottom: 24,
   },
 
-  label: {
-    color: colors.textSecondary,
-    marginBottom: 8,
-    fontSize: 14,
-  },
-
-  currencyGrid: {
+  swapButton: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -4,
-    marginBottom: 12,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-
-  swapButton: {
     backgroundColor: colors.primary,
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
     marginBottom: 24,
@@ -67,19 +48,8 @@ export const styles = StyleSheet.create({
   swapButtonText: {
     color: '#ffffff',
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-  },
-
-  convertButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    marginBottom: 24,
-  },
-
-  convertButtonDisabled: {
-    backgroundColor: colors.disabled,
+    marginLeft: 8,
   },
 });
